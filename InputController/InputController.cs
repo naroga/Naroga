@@ -45,7 +45,6 @@ namespace Naroga.InputController
         /// <param name="callback"></param>
         public void addHorizontalAxisChangeListener(SChangeHorizontalAxis callback)
         {
-            Debug.Log("Entrei!");
             this.onChangeHorizontalAxis += callback;            
         }
 

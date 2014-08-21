@@ -13,14 +13,71 @@ namespace Naroga.DependencyInjection
     public class Container : UnityEngine.MonoBehaviour
     {
 
-        public List<Service.MonoBehaviour> monoBehaviourServices;
+        public List<Service.MonoBehaviourService> monoBehaviourServices;
         public List<Service.Service> services;
 
         protected Dictionary<string, object> activeServices = new Dictionary<string,object>();
 
+        protected void Start()
+        {
+
+            foreach (Service.MonoBehaviourService mbService in monoBehaviourServices)
+            {
+                if (!activeServices.ContainsKey(mbService.name))
+                {
+                    initMonoBehaviourService(mbService.name);
+                }
+                
+            }
+
+        }
+
+        protected void initMonoBehaviourService(string name)
+        {
+
+            //Gets the monobehaviour instance defined in the inspector.
+            Service.MonoBehaviourService mbService = monoBehaviourServices.Find(delegate(Service.MonoBehaviourService localService) { return localService.name == name; });
+            UnityEngine.MonoBehaviour component = (UnityEngine.MonoBehaviour) mbService.gameObject.GetComponent(mbService.className);
+
+            if (component == null)
+            {
+                foreach (Component cObj in mbService.gameObject.GetComponents(typeof(Component)))
+                {
+                    Debug.LogError(cObj.GetType().Name);
+                }
+            }
+
+            //Sets all the arguments.
+            foreach (Service.MonoBehaviourService.Argument argument in mbService.arguments)
+            {
+                MethodInfo method = component.GetType().GetMethod(getSetterName(argument.property));
+                method.Invoke(component, new object[] { this.resolveArgument(argument.value) });
+
+            }
+
+            activeServices.Add(name, component);
+            
+        }
+
+        protected void initService(string name)
+        {
+            Service.Service serviceInfo = services.Find(delegate(Service.Service localService) { return localService.name == name; });
+            Type type = Type.GetType(serviceInfo.className);
+            List<object> arguments = new List<object>();
+
+            foreach (string argument in serviceInfo.arguments)
+            {
+                arguments.Add(this.resolveArgument(argument));
+            }
+
+            object service = Activator.CreateInstance(type, arguments.ToArray());
+
+            activeServices.Add(name, service);
+        }
+
         public object get(string name)
         {
-            
+
             //If the service is already instantiated/initiated, just return it.
             if (activeServices.ContainsKey(name))
             {
@@ -29,22 +86,9 @@ namespace Naroga.DependencyInjection
 
             //If the service isn't instantiated, we must instantiate it.
             //First, check on the monoBehaviourServices list to see if a component is defined as a service.
-            if (monoBehaviourServices.Exists(delegate(Service.MonoBehaviour localService) { return localService.name == name; }))
+            if (monoBehaviourServices.Exists(delegate(Service.MonoBehaviourService localService) { return localService.name == name; }))
             {
-                
-                //Gets the monobehaviour instance defined in the inspector.
-                Service.MonoBehaviour mbService = monoBehaviourServices.Find(delegate(Service.MonoBehaviour localService) { return localService.name == name; });
-                Component component = mbService.gameObject.GetComponent(mbService.className);
-
-                //Sets all the arguments.
-                foreach (Service.MonoBehaviour.Argument argument in mbService.arguments)
-                {
-                    MethodInfo method = component.GetType().GetMethod(getSetterName(argument.property));
-                    method.Invoke(component, new object[] { this.resolveArgument(argument.value) });
-                }                
-
-                activeServices[name] = component;
-
+                initMonoBehaviourService(name);
             }
             //If no component is defined as a service, check to see if there is a class defined to be instantiated as a service.
             else
@@ -52,19 +96,7 @@ namespace Naroga.DependencyInjection
 
                 if (services.Exists(delegate(Service.Service localService) { return localService.name == name; }))
                 {
-
-                    Service.Service serviceInfo = services.Find(delegate(Service.Service localService) { return localService.name == name; });
-                    Type type = Type.GetType(serviceInfo.className);
-                    List<object> arguments = new List<object>();
-
-                    foreach (string argument in serviceInfo.arguments)
-                    {
-                        arguments.Add(this.resolveArgument(argument));
-                    }
-
-                    object service = Activator.CreateInstance(type, arguments.ToArray());
-                    activeServices[name] = service;
-
+                    initService(name);
                 }
                 else
                 {

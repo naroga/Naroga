@@ -11,16 +11,9 @@ namespace Naroga.CharacterController.ThirdPerson
         //IoC initiation
         protected IInputController _inputController;
 
-        public IInputController inputController
+        public void setInputController(IInputController controller)
         {
-            get
-            {
-                return _inputController;
-            }
-            set
-            {
-                _inputController = value;
-            }
+            _inputController = controller;
         }
         
         // Use this for initialization

@@ -5,7 +5,7 @@ namespace Naroga.DependencyInjection.Service
 {
 
     [System.Serializable]
-    public class MonoBehaviour
+    public class MonoBehaviourService
     {
         [System.Serializable]
         public struct Argument
