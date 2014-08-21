@@ -124,15 +124,20 @@ namespace Naroga.DependencyInjection
         /// </summary>
         /// <param name="argument"></param>
         /// <returns></returns>
-        protected object resolveArgument(string argument) {
-            
-            switch (argument[0]) {
-                case '@' :
+        protected object resolveArgument(string argument)
+        {
+
+            switch (argument[0])
+            {
+                case '@':
                     return this.get(argument.Substring(1));
                 case '%':
+                    //TODO: Add verifications here! If the object is not found, raise an exception. If the object is found, but the component is not, also raise an exception.
                     string[] path = argument.Substring(1).Split(":".ToCharArray());
-                    UnityEngine.MonoBehaviour go = (UnityEngine.MonoBehaviour)GameObject.FindGameObjectWithTag(path[0]).GetComponent(path[1]);
+                    GameObject gObj = GameObject.FindGameObjectWithTag(path[0]);
+                    Component go = gObj.GetComponent(path[1]);
                     return go;
+
                 default:
                     return argument;
             }
